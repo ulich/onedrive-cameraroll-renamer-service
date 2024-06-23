@@ -9,12 +9,14 @@ import (
 )
 
 func Start(ctx context.Context) error {
-	token, err := getOauthToken(ctx)
+	token, err := getStoredOrNewOAuthToken(ctx)
 	if err != nil {
-		return fmt.Errorf("get oauth token: %w", err)
+		return err
 	}
 
-	tc := oauth2.NewClient(ctx, oauthConfig.TokenSource(ctx, token))
+	tokenSource := oauthConfig.TokenSource(ctx, token)
+
+	tc := oauth2.NewClient(ctx, tokenSource)
 	client := onedrive.NewClient(tc)
 
 	response, err := client.Drives.List(ctx)

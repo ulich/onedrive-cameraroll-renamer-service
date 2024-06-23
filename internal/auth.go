@@ -2,6 +2,7 @@ package internal
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"math/rand"
 	"net/http"
@@ -9,6 +10,8 @@ import (
 
 	"golang.org/x/oauth2"
 )
+
+const tokenFilename = "token.json"
 
 var oauthConfig = oauth2.Config{
 	Endpoint: oauth2.Endpoint{
@@ -20,10 +23,40 @@ var oauthConfig = oauth2.Config{
 	ClientSecret: os.Getenv("OAUTH_CLIENT_SECRET"),
 	Scopes: []string{
 		"https://graph.microsoft.com/Files.ReadWrite",
+		"offline_access",
 	},
 }
 
-func getOauthToken(ctx context.Context) (*oauth2.Token, error) {
+func getStoredOrNewOAuthToken(ctx context.Context) (*oauth2.Token, error) {
+	tokenJson, err := os.ReadFile(tokenFilename)
+	if err == nil {
+		var token oauth2.Token
+		err = json.Unmarshal(tokenJson, &token)
+		if err != nil {
+			return nil, fmt.Errorf("json unmarshal token file content: %w", err)
+		}
+		return &token, err
+	}
+
+	if !os.IsNotExist(err) {
+		return nil, fmt.Errorf("read token file: %w", err)
+	}
+
+	token, err := getNewOAuthToken(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get oauth token: %w", err)
+	}
+
+	tokenJson, _ = json.Marshal(*token)
+	err = os.WriteFile(tokenFilename, tokenJson, 0644)
+	if err != nil {
+		return nil, fmt.Errorf("write token file: %w", err)
+	}
+
+	return token, nil
+}
+
+func getNewOAuthToken(ctx context.Context) (*oauth2.Token, error) {
 	tokens, errors, httpServer := startTemporaryOAuthCallbackServer()
 
 	defer func() {
@@ -47,7 +80,7 @@ func startTemporaryOAuthCallbackServer() (chan *oauth2.Token, chan error, *http.
 	state := randomString(32)
 
 	loginUrl := oauthConfig.AuthCodeURL(state)
-	fmt.Printf("Please visit\n\n%v\n", loginUrl)
+	fmt.Printf("Please log in:\n%v\n", loginUrl)
 
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /auth/callback", func(w http.ResponseWriter, r *http.Request) {
@@ -89,7 +122,7 @@ func handleOAuthCallback(w http.ResponseWriter, r *http.Request, state string, t
 		return
 	}
 
-	token, err := oauthConfig.Exchange(context.Background(), code)
+	token, err := oauthConfig.Exchange(context.Background(), code, oauth2.AccessTypeOffline)
 	if err != nil {
 		http.Error(w, "Failed to exchange token", http.StatusInternalServerError)
 		errors <- fmt.Errorf("code exchange: %w", err)

@@ -47,13 +47,26 @@ func getStoredOrNewOAuthToken(ctx context.Context) (*oauth2.Token, error) {
 		return nil, fmt.Errorf("get oauth token: %w", err)
 	}
 
-	tokenJson, _ = json.Marshal(*token)
-	err = os.WriteFile(tokenFilename, tokenJson, 0644)
+	err = storeToken(token)
 	if err != nil {
-		return nil, fmt.Errorf("write token file: %w", err)
+		return nil, err
 	}
 
 	return token, nil
+}
+
+func storeToken(token *oauth2.Token) error {
+	tokenJson, err := json.Marshal(*token)
+	if err != nil {
+		return fmt.Errorf("json marshal token: %w", err)
+	}
+
+	err = os.WriteFile(tokenFilename, tokenJson, 0644)
+	if err != nil {
+		return fmt.Errorf("write token file: %w", err)
+	}
+
+	return nil
 }
 
 func getNewOAuthToken(ctx context.Context) (*oauth2.Token, error) {

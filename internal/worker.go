@@ -19,6 +19,16 @@ func Start(ctx context.Context) error {
 	tc := oauth2.NewClient(ctx, tokenSource)
 	client := onedrive.NewClient(tc)
 
+	refreshedToken, err := tokenSource.Token()
+	if err != nil {
+		return fmt.Errorf("get refreshed token: %w", err)
+	}
+
+	err = storeToken(refreshedToken)
+	if err != nil {
+		return fmt.Errorf("store refreshed token: %w", err)
+	}
+
 	response, err := client.Drives.List(ctx)
 	if err != nil {
 		return fmt.Errorf("list drives: %w", err)

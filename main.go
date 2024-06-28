@@ -2,7 +2,7 @@ package main
 
 import (
 	"context"
-	"fmt"
+	"log/slog"
 	"os"
 
 	"github.com/ulich/onedrive-cameraroll-renamer-service/internal"
@@ -13,7 +13,7 @@ func main() {
 
 	err := internal.Start(ctx)
 	if err != nil {
-		fmt.Printf("error: %v\n", err)
+		slog.Error("error starting worker", "error", err)
 		os.Exit(1)
 	}
 }

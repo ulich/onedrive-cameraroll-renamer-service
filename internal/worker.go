@@ -3,6 +3,7 @@ package internal
 import (
 	"context"
 	"fmt"
+	"os"
 
 	"github.com/goh-chunlin/go-onedrive/onedrive"
 	"golang.org/x/oauth2"
@@ -14,6 +15,19 @@ func Start(ctx context.Context) error {
 		return err
 	}
 
+	client, err := createClient(ctx, token)
+	if err != nil {
+		return err
+	}
+
+	fp := fileProcessor{
+		client:         client.DriveItems,
+		targetFolderId: os.Getenv("CAMERA_ROLL_TARGET_FOLDER_ID"),
+	}
+	return fp.processFiles(ctx)
+}
+
+func createClient(ctx context.Context, token *oauth2.Token) (*onedrive.Client, error) {
 	tokenSource := oauthConfig.TokenSource(ctx, token)
 
 	tc := oauth2.NewClient(ctx, tokenSource)
@@ -21,22 +35,12 @@ func Start(ctx context.Context) error {
 
 	refreshedToken, err := tokenSource.Token()
 	if err != nil {
-		return fmt.Errorf("get refreshed token: %w", err)
+		return nil, fmt.Errorf("get refreshed token: %w", err)
 	}
 
 	err = storeToken(refreshedToken)
 	if err != nil {
-		return fmt.Errorf("store refreshed token: %w", err)
+		return nil, fmt.Errorf("store refreshed token: %w", err)
 	}
-
-	response, err := client.Drives.List(ctx)
-	if err != nil {
-		return fmt.Errorf("list drives: %w", err)
-	}
-
-	for _, drive := range response.Drives {
-		fmt.Println(*drive)
-	}
-
-	return nil
+	return client, nil
 }

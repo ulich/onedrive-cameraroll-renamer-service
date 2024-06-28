@@ -142,7 +142,7 @@ func handleOAuthCallback(w http.ResponseWriter, r *http.Request, state string, t
 		return
 	}
 
-	fmt.Println("OAuth2 token successfully received\n")
+	fmt.Println("OAuth2 token successfully received")
 	_, _ = fmt.Fprintf(w, "Authentication successfull. You can close this page.")
 	tokens <- token
 }

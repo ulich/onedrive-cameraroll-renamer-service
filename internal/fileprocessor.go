@@ -27,15 +27,21 @@ func (fp fileProcessor) processFiles(ctx context.Context) error {
 		return fmt.Errorf("list pictures in camera roll folder: %w", err)
 	}
 
+	successCount := 0
+	failedCount := 0
 	for _, picture := range pictures.DriveItems {
 		if picture.Id != fp.targetFolderId {
 			err := fp.processFile(ctx, picture)
 			if err != nil {
 				slog.Warn("failed to process file", "file", picture.Name, "error", err.Error())
+				failedCount++
+			} else {
+				successCount++
 			}
 		}
 	}
 
+	slog.Info("processed files", "success_count", successCount, "failed_count", failedCount)
 	return nil
 }
 

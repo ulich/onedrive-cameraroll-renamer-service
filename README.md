@@ -41,3 +41,4 @@ env $(cat .env | grep -v "#" | xargs) go run .
 * Errors are only logged. The next time it runs, it will try to process the same files over and over again
 * There is no UI to start the authorization flow, instead, the auth URL is printed to stdout
 * It's currently not multi-tenant aware. One deployment is only able to work with one onedrive account
+* Build docker images for more architectures, not just arm64

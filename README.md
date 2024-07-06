@@ -35,6 +35,7 @@ env $(cat .env | grep -v "#" | xargs) go run .
 
 ## TODOs
 
+* The timezone is currently hardcoded to `Europe/Berlin`. If filenames contain unix timestamps, they will be converted to this timezone
 * The list of filename patterns is not complete for sure. I just added the cases I encountered with my files
 * The files are not really named with 100% consistency. The most important thing for me right now was that all files start with `YYYYMMDD_`
 * Errors are only logged. The next time it runs, it will try to process the same files over and over again

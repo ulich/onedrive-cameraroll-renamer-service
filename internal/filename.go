@@ -38,8 +38,13 @@ func calcNewFilename(name string) (string, error) {
 			return "", fmt.Errorf("parse timestamp as int %v, %w", timestampString, err)
 		}
 
+		timezone, err := time.LoadLocation("Europe/Berlin")
+		if err != nil {
+			return "", fmt.Errorf("load timezone: %w", err)
+		}
+
 		t := time.UnixMilli(timestamp)
-		timeString := t.Format("20060102_150405")
+		timeString := t.In(timezone).Format("20060102_150405")
 
 		return timeString + "_" + suffix, nil
 	}
